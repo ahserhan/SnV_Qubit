@@ -1,0 +1,172 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      5354,        162]
+NotebookOptionsPosition[      4631,        142]
+NotebookOutlinePosition[      5084,        159]
+CellTagsIndexPosition[      5041,        156]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", 
+   RowBox[{
+    RowBox[{
+     RowBox[{
+     "Axial", " ", "hyperfine", " ", "Hamiltonian", " ", "for", " ", "S"}], 
+     "=", 
+     RowBox[{"1", "/", "2"}]}], ",", 
+    RowBox[{"I", "=", 
+     RowBox[{
+      RowBox[{"1", "/", "2"}], " ", 
+      RowBox[{"Basis", ":", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"|", 
+          RowBox[{
+           RowBox[{"\[UpArrow]", "\[DoubleUpArrow]"}], ">"}]}], ",", " ", 
+         RowBox[{"|", 
+          RowBox[{
+           RowBox[{"\[UpArrow]", "\[DoubleDownArrow]"}], ">"}]}], ",", " ", 
+         RowBox[{"|", 
+          RowBox[{
+           RowBox[{"\[DownArrow]", "\[DoubleUpArrow]"}], ">"}]}], ",", " ", 
+         RowBox[{"|", 
+          RowBox[{
+           RowBox[{"\[DownArrow]", "\[DoubleDownArrow]"}], ">"}]}]}], 
+        "}"}]}]}]}]}], "*)"}], 
+  RowBox[{
+   RowBox[{
+    RowBox[{"ClearAll", "[", 
+     RowBox[{
+     "Apar", ",", "Aperp", ",", "hbar", ",", "Hhf", ",", "evals", ",", 
+      "evecs"}], "]"}], ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{
+    RowBox[{"Hhf", "=", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"Apar", ",", "0", ",", "0", ",", "0"}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"0", ",", 
+         RowBox[{"-", "Apar"}], ",", 
+         RowBox[{"2", " ", "Aperp"}], ",", "0"}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"0", ",", 
+         RowBox[{"2", " ", "Aperp"}], ",", 
+         RowBox[{"-", "Apar"}], ",", "0"}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"0", ",", "0", ",", "0", ",", "Apar"}], "}"}]}], "}"}]}], 
+    ";"}], "\n", "\[IndentingNewLine]", 
+   RowBox[{"(*", "Diagonalize", "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"evals", ",", "evecs"}], "}"}], "=", 
+     RowBox[{"Eigensystem", "[", "Hhf", "]"}]}], ";"}], "\n", 
+   "\[IndentingNewLine]", 
+   RowBox[{"(*", "Display", "*)"}], "\[IndentingNewLine]", 
+   RowBox[{"evals", "//", "Simplify"}], "\n", 
+   RowBox[{"evecs", "//", "Simplify"}], "\n", 
+   RowBox[{"MatrixForm", "[", "Hhf", "]"}], "\n"}]}]], "Input",
+ CellChangeTimes->{{3.976226716496951*^9, 3.976226746263893*^9}},
+ CellLabel->"In[7]:=",ExpressionUUID->"4f5a86ae-e787-4c86-b911-e47d7bb7fd83"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"Apar", ",", "Apar", ",", 
+   RowBox[{
+    RowBox[{"-", "Apar"}], "-", 
+    RowBox[{"2", " ", "Aperp"}]}], ",", 
+   RowBox[{
+    RowBox[{"-", "Apar"}], "+", 
+    RowBox[{"2", " ", "Aperp"}]}]}], "}"}]], "Output",
+ CellChangeTimes->{{3.9762267181553793`*^9, 3.97622674671626*^9}},
+ CellLabel->"Out[10]=",ExpressionUUID->"85243ef6-e0d6-46e6-9262-f17f7ab0f425"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"0", ",", "0", ",", "0", ",", "1"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"1", ",", "0", ",", "0", ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0", ",", 
+     RowBox[{"-", "1"}], ",", "1", ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0", ",", "1", ",", "1", ",", "0"}], "}"}]}], "}"}]], "Output",
+ CellChangeTimes->{{3.9762267181553793`*^9, 3.976226746731747*^9}},
+ CellLabel->"Out[11]=",ExpressionUUID->"b9ddfb40-bfe4-45ab-9c2c-d0d33702562c"],
+
+Cell[BoxData[
+ TagBox[
+  RowBox[{"(", "\[NoBreak]", GridBox[{
+     {"Apar", "0", "0", "0"},
+     {"0", 
+      RowBox[{"-", "Apar"}], 
+      RowBox[{"2", " ", "Aperp"}], "0"},
+     {"0", 
+      RowBox[{"2", " ", "Aperp"}], 
+      RowBox[{"-", "Apar"}], "0"},
+     {"0", "0", "0", "Apar"}
+    },
+    GridBoxAlignment->{"Columns" -> {{Center}}, "Rows" -> {{Baseline}}},
+    GridBoxSpacings->{"Columns" -> {
+        Offset[0.27999999999999997`], {
+         Offset[0.7]}, 
+        Offset[0.27999999999999997`]}, "Rows" -> {
+        Offset[0.2], {
+         Offset[0.4]}, 
+        Offset[0.2]}}], "\[NoBreak]", ")"}],
+  Function[BoxForm`e$, 
+   MatrixForm[BoxForm`e$]]]], "Output",
+ CellChangeTimes->{{3.9762267181553793`*^9, 3.976226746731747*^9}},
+ CellLabel->
+  "Out[12]//MatrixForm=",ExpressionUUID->"3f714836-b8de-4957-8667-\
+96efdbf4f0ed"]
+}, Open  ]]
+},
+WindowSize->{1152., 579.6},
+WindowMargins->{{Automatic, -1157.3999999999996`}, {15, Automatic}},
+Magnification:>1.7 Inherited,
+FrontEndVersion->"13.0 for Microsoft Windows (64-bit) (February 4, 2022)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"7bbc463f-9609-4acf-8ccd-a7f36f002fc1"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 2254, 63, 470, "Input",ExpressionUUID->"4f5a86ae-e787-4c86-b911-e47d7bb7fd83"],
+Cell[2837, 87, 397, 10, 75, "Output",ExpressionUUID->"85243ef6-e0d6-46e6-9262-f17f7ab0f425"],
+Cell[3237, 99, 537, 13, 75, "Output",ExpressionUUID->"b9ddfb40-bfe4-45ab-9c2c-d0d33702562c"],
+Cell[3777, 114, 838, 25, 161, "Output",ExpressionUUID->"3f714836-b8de-4957-8667-96efdbf4f0ed"]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)
+
