@@ -141,39 +141,47 @@ def create_hamiltonian_nuclear():
     return H, Href, p, J2
 
 
-def PLE_transitions(B, theta, phi, eta, alpha=0, beta=0, alpha_exc=0, beta_exc=0):
+def solve_hamiltonian(B, theta, phi, q, Aperp, Apar, L, alpha, beta):
     """
-    Calculate PLE transition intensities for a sweep of B-field strength using QuTiP.
+    Solve the Hamiltonian for a sweep of B-field strength.
     
     Parameters:
-        B: Magnetic field strength (GHz)
+        B: Magnetic field strength array (GHz)
         theta: Polar angle (rad)
         phi: Azimuthal angle (rad)
-        eta: Polarization vector [px, py, pz] (unitless) e.g. [1,0,1] for +x, 0 for y, +z
+        q: Orbital magnetic field susceptibility
+        Aperp: Perpendicular hyperfine coupling (GHz)
+        Apar: Parallel hyperfine coupling (GHz)
+        L: Spin-orbit coupling strength (GHz)
         alpha: Strain parameter in x direction (GHz)
         beta: Strain parameter in y direction (GHz)
-        alpha_exc: Strain parameter in x direction of excited state (GHz)
-        beta_exc: Strain parameter in y direction of excited state (GHz)
+        
+    Returns:
+        tuple: (E, Eref, U, U_states, alignment)
+            - E: Eigenvalues array (len(B) x num_states)
+            - Eref: Reference eigenvalues (no B-field)
+            - U: Eigenvector matrices (len(B) x dim x num_states)
+            - U_states: List of QuTiP state vectors for each B value
+            - alignment: J² expectation values (len(B) x num_states)
     """
     H, Href, p, J2 = create_hamiltonian_nuclear()
-    Ns = int(2*params.Sn + 1)
     
     # Convert B to array for iteration
-    B = np.atleast_1d(B)  # Ensure B is at least 1D
+    B = np.atleast_1d(B)
     
     # Calculate magnetic field components for each B value
     bz_vals = B * np.cos(theta)
     bx_vals = B * np.sin(theta) * np.cos(phi)
     by_vals = B * np.sin(theta) * np.sin(phi)
     
-    # Solve ground-state Hamiltonian using QuTiP
+    # Solve Hamiltonian for each B value
     E = []
     U = []
     U_states = []  # Store QuTiP state vectors for later use
     alignment = []
     
     for i in range(len(B)):
-        H_qobj = H(bx_vals[i], by_vals[i], bz_vals[i], params.rg, params.q, params.Aperp_gnd, params.Apar_gnd, params.L, alpha, beta)
+        H_qobj = H(bx_vals[i], by_vals[i], bz_vals[i], params.rg, q, Aperp, Apar, L, alpha, beta)
         # Use QuTiP's eigenstates method which returns (eigenvalues, eigenvectors)
         eigvals, eigvecs = H_qobj.eigenstates()
         E.append(eigvals)
@@ -193,41 +201,80 @@ def PLE_transitions(B, theta, phi, eta, alpha=0, beta=0, alpha_exc=0, beta_exc=0
     U = np.array(U)
     alignment = np.array(alignment)
     
-    # Reference Hamiltonian
-    Href_qobj = Href(params.L, alpha, 0)
+    # Reference Hamiltonian (B=0)
+    Href_qobj = Href(L, alpha, 0)
     Eref, Uref_vecs = Href_qobj.eigenstates()
     Eref = np.array(Eref)
-    Uref = np.column_stack([vec.full().flatten() for vec in Uref_vecs])
     
-    # Solve excited-state Hamiltonian using QuTiP
-    E_exc = []
-    U_exc = []
-    U_exc_states = []  # Store QuTiP state vectors for later use
-    alignment_exc = []
+    return E, Eref, U, U_states, alignment
+
+
+def calculate_cyclicity(transition):
+    """
+    Calculate the cyclicity of each transition using the branching ratio:
+        cyclicity[l, k] = |⟨k|p|l⟩|² / Σ_k' |⟨k'|p|l⟩|²
+    This gives the probability of returning to ground state k after being 
+    excited to state l.
     
-    for i in range(len(B)):
-        H_exc_qobj = H(bx_vals[i], by_vals[i], bz_vals[i], params.rg, params.q_exc, params.Aperp_exc, params.Apar_exc, params.L_exc, alpha_exc, beta_exc)
-        eigvals_exc, eigvecs_exc = H_exc_qobj.eigenstates()
-        E_exc.append(eigvals_exc)
-        U_exc_states.append(eigvecs_exc)  # Store QuTiP states
+    Parameters:
+        transition: 2D array of transition rates |⟨exc_l|p·η|gnd_k⟩|²
+                    shape (num_exc_states, num_gnd_states)
         
-        U_exc_matrix = np.column_stack([vec.full().flatten() for vec in eigvecs_exc])
-        U_exc.append(U_exc_matrix)
+    Returns:
+        cyclicity: 2D array of shape (num_exc_states, num_gnd_states)
+                   cyclicity[l, k] = branching ratio from exc state l to gnd state k
+    """
+    num_exc, num_gnd = transition.shape
+    cyclicity = np.zeros((num_exc, num_gnd))
+    
+    for l in range(num_exc):
+        # Total decay rate from excited state l to all ground states
+        total_rate = np.sum(transition[l, :])
         
-        # Calculate alignment for excited state
-        align_exc_i = []
-        for vec in eigvecs_exc:
-            align_exc_i.append(qt.expect(J2, vec))
-        alignment_exc.append(align_exc_i)
+        if total_rate > 0:
+            # Branching ratio to each ground state
+            cyclicity[l, :] = transition[l, :] / total_rate
     
-    E_exc = np.array(E_exc)
-    U_exc = np.array(U_exc)
-    alignment_exc = np.array(alignment_exc)
+    return cyclicity
+
+
+def PLE_transitions(B, theta, phi, eta, alpha=0, beta=0, alpha_exc=0, beta_exc=0):
+    """
+    Calculate PLE transition intensities for a sweep of B-field strength using QuTiP.
     
-    # Reference excited state Hamiltonian
-    Href_exc_qobj = Href(params.L_exc, alpha_exc, 0)
-    Eref_exc, _ = Href_exc_qobj.eigenstates()
-    Eref_exc = np.array(Eref_exc)
+    Parameters:
+        B: Magnetic field strength (GHz)
+        theta: Polar angle (rad)
+        phi: Azimuthal angle (rad)
+        eta: Polarization vector [px, py, pz] (unitless) e.g. [1,0,1] for +x, 0 for y, +z
+        alpha: Strain parameter in x direction (GHz)
+        beta: Strain parameter in y direction (GHz)
+        alpha_exc: Strain parameter in x direction of excited state (GHz)
+        beta_exc: Strain parameter in y direction of excited state (GHz)
+        
+    Returns:
+        tuple: (E, Eref, U, alignment, E_exc, Eref_exc, U_exc, alignment_exc, transition, cyclicity)
+            - cyclicity: Spin preservation probability for each transition (len(B) x num_exc x num_gnd)
+    """
+    H, Href, p, J2 = create_hamiltonian_nuclear()
+    Ns = int(2*params.Sn + 1)
+    
+    # Convert B to array for iteration
+    B = np.atleast_1d(B)
+    
+    # Solve ground-state Hamiltonian
+    E, Eref, U, U_states, alignment = solve_hamiltonian(
+        B, theta, phi, 
+        params.q, params.Aperp_gnd, params.Apar_gnd, params.L, 
+        alpha, beta
+    )
+    
+    # Solve excited-state Hamiltonian
+    E_exc, Eref_exc, U_exc, U_exc_states, alignment_exc = solve_hamiltonian(
+        B, theta, phi,
+        params.q_exc, params.Aperp_exc, params.Apar_exc, params.L_exc,
+        alpha_exc, beta_exc
+    )
     
     # Calculate transition dipole moments using QuTiP
     # For each B field value, calculate transition matrix elements
@@ -254,7 +301,12 @@ def PLE_transitions(B, theta, phi, eta, alpha=0, beta=0, alpha_exc=0, beta_exc=0
                 # complete the dot product and take absolute square
                 transition[i, l, k] = np.abs(np.sum(dipole_elements))**2
     
-    return E, Eref, U, alignment, E_exc, Eref_exc, U_exc, alignment_exc, transition
+    # Calculate cyclicity from transition matrix (branching ratios)
+    cyclicity = np.zeros((len(B), 4*Ns, 4*Ns))
+    for i in range(len(B)):
+        cyclicity[i] = calculate_cyclicity(transition[i])
+    
+    return E, Eref, U, alignment, E_exc, Eref_exc, U_exc, alignment_exc, transition, cyclicity
 
 
 def PLE_spectrum(f_meas, B, theta, phi, eta, intensity=1.0, lw=0.080, 
@@ -279,7 +331,7 @@ def PLE_spectrum(f_meas, B, theta, phi, eta, intensity=1.0, lw=0.080,
     peak = lambda f, f0, a, sigma: a * (sigma/2)**2 / ((f - f0)**2 + (sigma/2)**2)  # Lorentzian
     Ns = int(2*params.Sn + 1)
     
-    E, Eref, _, _, E_exc, Eref_exc, _, _, transition = PLE_transitions(
+    E, Eref, _, _, E_exc, Eref_exc, _, _, transition, _ = PLE_transitions(
         B, theta, phi, eta, alpha=alpha, beta=beta, alpha_exc=alpha_exc, beta_exc=beta_exc
     )
     
